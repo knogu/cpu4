@@ -78,8 +78,51 @@ assertions2 = [
     {"stage": "FETCH", "x2": 1},
 ]
 
+insts3 = [
+    "`MM[0]=32'b00000000000100000000000010010011;   // addi x1, x0, 1",
+    "`MM[1]=32'b00000000000100000000000100010011;   // L: addi x2, x0, 1",
+    "`MM[2]={~7'd0,5'd2,5'd1,3'h0,5'h1d,7'h63};     // beq x1, x2, L", # eq. so expected to branch
+    "`MM[3]=32'b00000000000000000000000000110011;   // add x0, x0, x0",
+]
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2)]
+assertions3 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE", "inst": "0b00000000000100000000000010010011"},
+        {"stage": "EX_I", "inst": "0b00000000000100000000000010010011"},
+        {"stage": "ALU_WB", "inst": "0b00000000000100000000000010010011"},
+    {"stage": "FETCH", "inst": "0b00000000000100000000000010010011", "x1": 1},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x2": 1},
+        {"stage": "DECODE", "pc_cur_inst": 8, "1st_op": 8, "2nd_op": -4, "alu_control": "0b0000", "alu_out": 4},
+        {"stage": "BR", "1st_op": 1, "2nd_op": 1, "alu_control": "0b1000", "alu_out": 0, "result": 4},
+    {"stage": "FETCH", "pc": 4},
+]
+
+insts4 = [
+    "`MM[0]=32'b00000000000100000000000010010011;   // addi x1, x0, 1",
+    "`MM[1]=32'b00000000001000000000000100010011;   // L: addi x2, x0, 2",
+    "`MM[2]={~7'd0,5'd2,5'd1,3'h0,5'h1d,7'h63};     // beq x1, x2, L", # not eq. so expected not to branch
+    "`MM[3]=32'b00000000000000000000000000110011;   // add x0, x0, x0",
+]
+
+assertions4 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x1": 1},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x2": 2},
+        {"stage": "DECODE"},
+        {"stage": "BR"},
+    {"stage": "FETCH", "pc": 12},
+]
+
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     for j, inst in enumerate(insts):

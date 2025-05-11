@@ -20,12 +20,12 @@ module m_RF(input wire clk,
   integer i; initial for (i=0; i<32; i=i+1) mem[i]=0;
 endmodule
 
-module m_alu(input wire[31:0] rs1_val, input wire[31:0] second_operand, input wire [2:0] alu_control, output wire[31:0] alu_out);
-  assign alu_out = (alu_control == 3'b001) ? rs1_val - second_operand :
-                   (alu_control == 3'b010) ? rs1_val & second_operand :
-                   (alu_control == 3'b011) ? rs1_val | second_operand :
-                   (alu_control == 3'b100) ? second_operand :
-                   (alu_control == 3'b101) ? ($signed(rs1_val) < $signed(second_operand)) :
+module m_alu(input wire[31:0] rs1_val, input wire[31:0] second_operand, input wire [3:0] alu_control, output wire[31:0] alu_out);
+  assign alu_out = (alu_control == 4'b1000) ? rs1_val - second_operand :
+                   (alu_control == 4'b010) ? rs1_val & second_operand :
+                   (alu_control == 4'b011) ? rs1_val | second_operand :
+                   (alu_control == 4'b100) ? second_operand :
+                   (alu_control == 4'b101) ? ($signed(rs1_val) < $signed(second_operand)) :
                    rs1_val + second_operand;
 endmodule
 
@@ -51,6 +51,7 @@ module main_decoder(
     input wire [6:0] opcode,
     input wire [6:0] funct7,
     input wire [2:0] funct3,
+    input wire is_alu_out_zero,
     output wire is_inst_updated,
     output wire is_mem_write,
     output wire is_reg_write,
@@ -58,6 +59,7 @@ module main_decoder(
     output wire is_result_from_mem_read,
     output wire is_result_from_older_alu_out,
     output wire is_pc_incr,
+    output wire is_pc_updated,
     output wire is_1st_op_inst_pc,
     output wire is_2nd_op_imm,
     output wire is_j,
@@ -66,7 +68,8 @@ module main_decoder(
     output wire is_r,
     output wire is_u,
     output wire is_i,
-    output wire is_jalr
+    output wire is_jalr,
+    output wire [3:0] alu_control
 );
     assign is_j = (opcode[6:2] == 5'b11011);
     assign is_b = (opcode[6:2] == 5'b11000);
@@ -98,6 +101,7 @@ module main_decoder(
             MEM_READ: stage <= MEM_WB;
             MEM_WRITE: stage <= FETCH;
             MEM_WB: stage <= FETCH;
+            BR: stage <= FETCH;
         endcase
     end
 
@@ -111,9 +115,14 @@ module main_decoder(
     assign is_read_from_result = (stage == MEM_READ | stage == MEM_WRITE);
     assign is_result_from_mem_read = (stage == MEM_WB);
     assign is_result_from_older_alu_out = (stage == BR);
-    assign is_2nd_op_imm = is_i | is_s | is_jalr;// | is_lui;
+    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | is_jalr;// | is_lui;
     assign is_pc_incr = (stage == FETCH);
+    assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero);
     assign is_1st_op_inst_pc = (stage == DECODE) & is_b;
+
+    assign alu_control = (is_r | is_i_calc) ? {funct7[5], funct3} :
+                         (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
+                         4'b0000;
 endmodule
 
 module m_imm_gen(input wire w_clk,
@@ -138,7 +147,7 @@ module cpu(input wire clk);
     // fetch
     reg [31:0] r_pc = 0;
     always_ff @( posedge clk ) begin
-        if (is_pc_incr) r_pc <= result;
+        if (is_pc_updated) r_pc <= result;
     end
     wire [31:0] read_data;
     wire [31:0] mem_read_addr;
@@ -158,13 +167,15 @@ module cpu(input wire clk);
     end
 
     wire is_j, is_b, is_s, is_r, is_u, is_i;
-    wire is_2nd_op_imm, is_pc_incr;
+    wire is_2nd_op_imm, is_pc_incr, is_pc_updated;
     wire is_mem_write, is_result_from_older_alu_out;
+    wire [3:0] alu_control;
     main_decoder main_decoder(
         .clk(clk),
         .opcode(inst[6:0]),
         .funct7(inst[31:25]),
         .funct3(inst[14:12]),
+        .is_alu_out_zero(alu_out == 0),
         .is_inst_updated(is_inst_updated),
         .is_mem_write(is_mem_write),
         .is_reg_write(is_reg_write),
@@ -174,12 +185,14 @@ module cpu(input wire clk);
         .is_1st_op_inst_pc(is_1st_op_inst_pc),
         .is_result_from_older_alu_out(is_result_from_older_alu_out),
         .is_pc_incr(is_pc_incr),
+        .is_pc_updated(is_pc_updated),
         .is_j(is_j),
         .is_b(is_b),
         .is_s(is_s),
         .is_r(is_r),
         .is_u(is_u),
-        .is_i(is_i)
+        .is_i(is_i),
+        .alu_control(alu_control)
     );
     wire [31:0] imm;
     m_imm_gen imm_gen(clk, inst, is_j, is_b, is_s, is_r, is_u, is_i, imm);
@@ -193,7 +206,7 @@ module cpu(input wire clk);
     assign second_operand = is_pc_incr ? 4 :
                             is_2nd_op_imm ? imm :
                             rs2_val;
-    m_alu alu(first_operand, second_operand, 3'b000, alu_out);
+    m_alu alu(first_operand, second_operand, alu_control, alu_out);
     reg[31:0] r_alu_res;
     always_ff @( posedge clk ) begin
         r_alu_res <= alu_out;
@@ -224,7 +237,10 @@ module m_top();
         $display("rs2:                %d", c.inst[24:20]);
         $display("rs2_val:    %d", c.rs2_val);
         $display("1st_op:     %d", c.first_operand);
-        $display("2nd_op:     %d", c.second_operand);
+        $display("2nd_op:     %d", $signed(c.second_operand));
+        $display("2nd_op_u:     %d", c.second_operand);
+        $display("alu_control:    0b%4b", c.alu_control);
+        $display("alu_out:     %d", c.alu_out);
         $display("result:     %d", c.result);
         $display("mem_read_addr: %d", c.mem_read_addr);
         $display("x1:         %d", c.rf.mem[1]);
