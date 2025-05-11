@@ -122,7 +122,21 @@ assertions4 = [
     {"stage": "FETCH", "pc": 12},
 ]
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4)]
+insts5 = [
+    "`MM[0]={1'b0,10'b0000000100,1'b0,8'b00000000,5'd1,7'b1101111};     // jal 8",
+    "`MM[1]={12'd7,5'd0,3'd0,5'd1,7'h13};     // addi x1,x0,7",
+    "`MM[2]={12'd7,5'd0,3'd0,5'd1,7'h13};     // addi x1,x0,7",
+]
+
+assertions5 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE", "1st_op": 0, "imm": 8, "2nd_op": 8, "alu_out": 8},
+        {"stage": "JAL", "alu_out": 4},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "pc": 8, "x1": 4},
+]
+
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     for j, inst in enumerate(insts):

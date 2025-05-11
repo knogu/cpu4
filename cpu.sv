@@ -62,6 +62,7 @@ module main_decoder(
     output wire is_pc_updated,
     output wire is_1st_op_inst_pc,
     output wire is_2nd_op_imm,
+    output wire is_2nd_op_4,
     output wire is_j,
     output wire is_b,
     output wire is_s,
@@ -78,12 +79,13 @@ module main_decoder(
     assign is_u = (opcode[6:2] == 5'b01101 | opcode[6:2] ==5'b00101);
     assign is_i = ~(is_j | is_b | is_s | is_r | is_u);
     assign is_jalr = (opcode == 7'b1100111);
+    assign is_jal = (opcode == 7'b1101111);
     wire is_load; 
     assign is_load = (opcode == 7'b0000011);
     wire is_i_calc;
     assign is_i_calc = (opcode == 7'b0010011);
 
-    typedef enum logic[3:0] {FETCH, DECODE, MEM_ADDR, MEM_READ, MEM_WRITE, MEM_WB, EX_R, EX_I, ALU_WB, BR} stage_t;
+    typedef enum logic[3:0] {FETCH, DECODE, MEM_ADDR, MEM_READ, MEM_WRITE, MEM_WB, EX_R, EX_I, ALU_WB, BR, JAL} stage_t;
     stage_t stage;
     initial stage = FETCH;
     always_ff @(posedge clk) begin
@@ -93,7 +95,9 @@ module main_decoder(
                              (is_i_calc) ? EX_I :
                              (is_load | opcode == 7'b0100011) ? MEM_ADDR :
                              (is_b) ? BR :
+                             (is_jal) ? JAL : 
                              FETCH;
+            JAL: stage <= ALU_WB;
             EX_R: stage <= ALU_WB;
             EX_I: stage <= ALU_WB;
             ALU_WB: stage <= FETCH;
@@ -109,16 +113,18 @@ module main_decoder(
     assign is_reg_write = (is_load & (stage == MEM_WB))
                         | (is_r & (stage == ALU_WB))
                         | (is_i_calc & (stage == ALU_WB))
-                        | (opcode == 7'b1101111);
+                        | (is_jal);
                         //   is_lui | is_auipc;
     assign is_inst_updated = (stage == DECODE); // not fetch, because at fetch, the next mem_read_addr is decided but its inst is not loaded yet
     assign is_read_from_result = (stage == MEM_READ | stage == MEM_WRITE);
     assign is_result_from_mem_read = (stage == MEM_WB);
-    assign is_result_from_older_alu_out = (stage == BR);
-    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | is_jalr;// | is_lui;
+    assign is_result_from_older_alu_out = (stage == BR | stage == JAL | stage == ALU_WB);
+    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | | is_jal | is_jalr;// | is_lui;
+    assign is_2nd_op_4 = (stage == FETCH) | (stage == JAL);
     assign is_pc_incr = (stage == FETCH);
-    assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero);
-    assign is_1st_op_inst_pc = (stage == DECODE) & is_b;
+    assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero) | (stage == JAL) ;
+    assign is_1st_op_inst_pc = ((stage == DECODE) & (is_b | is_jal))
+                             | (stage == JAL);
 
     assign alu_control = (is_r | is_i_calc) ? {funct7[5], funct3} :
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
@@ -167,7 +173,7 @@ module cpu(input wire clk);
     end
 
     wire is_j, is_b, is_s, is_r, is_u, is_i;
-    wire is_2nd_op_imm, is_pc_incr, is_pc_updated;
+    wire is_2nd_op_imm, is_pc_incr, is_pc_updated, is_2nd_op_4;
     wire is_mem_write, is_result_from_older_alu_out;
     wire [3:0] alu_control;
     main_decoder main_decoder(
@@ -181,9 +187,10 @@ module cpu(input wire clk);
         .is_reg_write(is_reg_write),
         .is_read_from_result(is_read_from_result),
         .is_result_from_mem_read(is_result_from_mem_read),
-        .is_2nd_op_imm(is_2nd_op_imm),
-        .is_1st_op_inst_pc(is_1st_op_inst_pc),
         .is_result_from_older_alu_out(is_result_from_older_alu_out),
+        .is_2nd_op_imm(is_2nd_op_imm),
+        .is_2nd_op_4(is_2nd_op_4),
+        .is_1st_op_inst_pc(is_1st_op_inst_pc),
         .is_pc_incr(is_pc_incr),
         .is_pc_updated(is_pc_updated),
         .is_j(is_j),
@@ -203,7 +210,7 @@ module cpu(input wire clk);
     assign first_operand = is_1st_op_inst_pc ? pc_cur_inst :
                            is_pc_incr ? r_pc :
                            rs1_val;
-    assign second_operand = is_pc_incr ? 4 :
+    assign second_operand = is_2nd_op_4 ? 4 :
                             is_2nd_op_imm ? imm :
                             rs2_val;
     m_alu alu(first_operand, second_operand, alu_control, alu_out);
@@ -236,6 +243,7 @@ module m_top();
         $display("rs1_val:    %d", c.rs1_val);
         $display("rs2:                %d", c.inst[24:20]);
         $display("rs2_val:    %d", c.rs2_val);
+        $display("imm:        %d", c.imm);
         $display("1st_op:     %d", c.first_operand);
         $display("2nd_op:     %d", $signed(c.second_operand));
         $display("2nd_op_u:     %d", c.second_operand);
