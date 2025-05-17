@@ -136,7 +136,27 @@ assertions5 = [
     {"stage": "FETCH", "pc": 8, "x1": 4},
 ]
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5)]
+insts6 = [
+    "`MM[0]=32'b00000000100000000000000010010011;   // addi x1, x0, 8",
+    "`MM[1]={12'd4, 5'b1, 3'b0, 5'd2, 7'b1100111};   // jalr x2, 4(x1)",
+    "`MM[2]=32'b00000000000000000000000000110011;   // add x0, x0, x0", # should be skipped by jalr
+    "`MM[3]=32'b00000000010100000000000010010011;   // addi x1, x0, 5",
+]
+
+assertions6 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x1": 8},
+        {"stage": "DECODE", "rs1_val": 8, "1st_op": 8, "2nd_op": 4, "alu_out": 12},
+        {"stage": "JALR", "1st_op": 4, "2nd_op": 4, "alu_out": 8, "result": 12},
+        {"stage": "ALU_WB", "rd": 2, "result": 8},
+    {"stage": "FETCH", "x2": 8}
+]
+
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
+             (insts6, assertions6)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     for j, inst in enumerate(insts):
@@ -161,7 +181,7 @@ for ith, (insts, assertions) in enumerate(scenarios, start=0):
                 exit(3)
             if status[i][label] != val:
                 print("Assertion failed in " + str(ith) + "-th scenario")
-                print("actual PC: " + str(status[i]["pc"]))
+                # print("actual PC: " + str(status[i]["pc"]))
                 print("assertion index: " + str(i))
                 print(label)
                 print("expected: ", val)

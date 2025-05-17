@@ -12,16 +12,17 @@ module m_RF(input wire clk,
   reg[31:0] r_rs2_val = 0;
   always_ff @(posedge clk) begin
     if (w_write_enabled) mem[w_write_addr] <= w_write_data;
-    r_rs1_val <= (rs1 == 5'd0) ? 32'd0 : mem[rs1];
-    r_rs2_val <= (rs2 == 5'd0) ? 32'd0 : mem[rs2];
+    // r_rs1_val <= (rs1 == 5'd0) ? 32'd0 : mem[rs1];
+    // r_rs2_val <= (rs2 == 5'd0) ? 32'd0 : mem[rs2];
   end
-  assign w_rs1_val = r_rs1_val;
-  assign w_rs2_val = r_rs2_val;
+  assign w_rs1_val = (rs1 == 5'd0) ? 32'd0 : mem[rs1];
+  assign w_rs2_val = (rs2 == 5'd0) ? 32'd0 : mem[rs2];
   integer i; initial for (i=0; i<32; i=i+1) mem[i]=0;
 endmodule
 
 module m_alu(input wire[31:0] rs1_val, input wire[31:0] second_operand, input wire [3:0] alu_control, output wire[31:0] alu_out);
   assign alu_out = (alu_control == 4'b1000) ? rs1_val - second_operand :
+                   (alu_control == 4'b1001) ? rs1_val * second_operand :
                    (alu_control == 4'b010) ? rs1_val & second_operand :
                    (alu_control == 4'b011) ? rs1_val | second_operand :
                    (alu_control == 4'b100) ? second_operand :
@@ -85,7 +86,7 @@ module main_decoder(
     wire is_i_calc;
     assign is_i_calc = (opcode == 7'b0010011);
 
-    typedef enum logic[3:0] {FETCH, DECODE, MEM_ADDR, MEM_READ, MEM_WRITE, MEM_WB, EX_R, EX_I, ALU_WB, BR, JAL} stage_t;
+    typedef enum logic[3:0] {FETCH, DECODE, MEM_ADDR, MEM_READ, MEM_WRITE, MEM_WB, EX_R, EX_I, ALU_WB, BR, JAL, JALR} stage_t;
     stage_t stage;
     initial stage = FETCH;
     always_ff @(posedge clk) begin
@@ -96,8 +97,10 @@ module main_decoder(
                              (is_load | opcode == 7'b0100011) ? MEM_ADDR :
                              (is_b) ? BR :
                              (is_jal) ? JAL : 
+                             (is_jalr) ? JALR : 
                              FETCH;
             JAL: stage <= ALU_WB;
+            JALR: stage <= ALU_WB;
             EX_R: stage <= ALU_WB;
             EX_I: stage <= ALU_WB;
             ALU_WB: stage <= FETCH;
@@ -111,22 +114,22 @@ module main_decoder(
 
     assign is_mem_write = (stage == MEM_WRITE);
     assign is_reg_write = (is_load & (stage == MEM_WB))
-                        | (is_r & (stage == ALU_WB))
-                        | (is_i_calc & (stage == ALU_WB))
+                        | (stage == ALU_WB)
                         | (is_jal);
                         //   is_lui | is_auipc;
     assign is_inst_updated = (stage == DECODE); // not fetch, because at fetch, the next mem_read_addr is decided but its inst is not loaded yet
     assign is_read_from_result = (stage == MEM_READ | stage == MEM_WRITE);
     assign is_result_from_mem_read = (stage == MEM_WB);
-    assign is_result_from_older_alu_out = (stage == BR | stage == JAL | stage == ALU_WB);
+    assign is_result_from_older_alu_out = (stage == BR | stage == JAL | stage == ALU_WB) | (stage == JALR);
     assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | | is_jal | is_jalr;// | is_lui;
     assign is_2nd_op_4 = (stage == FETCH) | (stage == JAL);
     assign is_pc_incr = (stage == FETCH);
-    assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero) | (stage == JAL) ;
+    assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero) | (stage == JAL) | (stage == JALR);
     assign is_1st_op_inst_pc = ((stage == DECODE) & (is_b | is_jal))
-                             | (stage == JAL);
+                             | (stage == JAL) | (stage == JALR) ;
 
-    assign alu_control = (is_r | is_i_calc) ? {funct7[5], funct3} :
+    assign alu_control = (is_r & funct7 == 7'b0000001 && funct3 == 3'b000) ? 4'b1001 : // mul
+                         (is_r | is_i_calc) ? {funct7[5], funct3} :
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
                          4'b0000;
 endmodule
@@ -153,7 +156,7 @@ module cpu(input wire clk);
     // fetch
     reg [31:0] r_pc = 0;
     always_ff @( posedge clk ) begin
-        if (is_pc_updated) r_pc <= result;
+        if (is_pc_updated) r_pc <= {result[31:1], 1'b0}; // handle &~1 for jalr. Anyway the least-significant bit is not used anywhere
     end
     wire [31:0] read_data;
     wire [31:0] mem_read_addr;
@@ -245,11 +248,13 @@ module m_top();
         $display("rs2_val:    %d", c.rs2_val);
         $display("imm:        %d", c.imm);
         $display("1st_op:     %d", c.first_operand);
+        $display("1st_op:     %d", c.first_operand);
         $display("2nd_op:     %d", $signed(c.second_operand));
         $display("2nd_op_u:     %d", c.second_operand);
         $display("alu_control:    0b%4b", c.alu_control);
         $display("alu_out:     %d", c.alu_out);
         $display("result:     %d", c.result);
+        $display("rd:         %d", c.inst[11:7]);
         $display("mem_read_addr: %d", c.mem_read_addr);
         $display("x1:         %d", c.rf.mem[1]);
         $display("x2:         %d", c.rf.mem[2]);
