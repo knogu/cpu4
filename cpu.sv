@@ -23,10 +23,10 @@ endmodule
 module m_alu(input wire[31:0] rs1_val, input wire[31:0] second_operand, input wire [3:0] alu_control, output wire[31:0] alu_out);
   assign alu_out = (alu_control == 4'b1000) ? rs1_val - second_operand :
                    (alu_control == 4'b1001) ? rs1_val * second_operand :
-                   (alu_control == 4'b010) ? rs1_val & second_operand :
-                   (alu_control == 4'b011) ? rs1_val | second_operand :
-                   (alu_control == 4'b100) ? second_operand :
-                   (alu_control == 4'b101) ? ($signed(rs1_val) < $signed(second_operand)) :
+                   (alu_control == 4'b0010) ? rs1_val & second_operand :
+                   (alu_control == 4'b0011) ? rs1_val | second_operand :
+                   (alu_control == 4'b1111) ? second_operand :
+                   (alu_control == 4'b0101) ? ($signed(rs1_val) < $signed(second_operand)) :
                    rs1_val + second_operand;
 endmodule
 
@@ -81,6 +81,7 @@ module main_decoder(
     assign is_i = ~(is_j | is_b | is_s | is_r | is_u);
     assign is_jalr = (opcode == 7'b1100111);
     assign is_jal = (opcode == 7'b1101111);
+    assign is_lui = (opcode == 7'b0110111);
     wire is_load; 
     assign is_load = (opcode == 7'b0000011);
     wire is_i_calc;
@@ -93,7 +94,7 @@ module main_decoder(
         case (stage)
             FETCH: stage <= DECODE;
             DECODE: stage <= (is_r) ? EX_R :
-                             (is_i_calc) ? EX_I :
+                             (is_i_calc | is_u) ? EX_I :
                              (is_load | opcode == 7'b0100011) ? MEM_ADDR :
                              (is_b) ? BR :
                              (is_jal) ? JAL : 
@@ -121,7 +122,7 @@ module main_decoder(
     assign is_read_from_result = (stage == MEM_READ | stage == MEM_WRITE);
     assign is_result_from_mem_read = (stage == MEM_WB);
     assign is_result_from_older_alu_out = (stage == BR | stage == JAL | stage == ALU_WB) | (stage == JALR);
-    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | | is_jal | is_jalr;// | is_lui;
+    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | | is_jal | is_jalr | is_lui;
     assign is_2nd_op_4 = (stage == FETCH) | (stage == JAL);
     assign is_pc_incr = (stage == FETCH);
     assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero) | (stage == JAL) | (stage == JALR);
@@ -131,6 +132,7 @@ module main_decoder(
     assign alu_control = (is_r & funct7 == 7'b0000001 && funct3 == 3'b000) ? 4'b1001 : // mul
                          (is_r | is_i_calc) ? {funct7[5], funct3} :
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
+                         (is_lui) ? 4'b1111 :
                          4'b0000;
 endmodule
 
