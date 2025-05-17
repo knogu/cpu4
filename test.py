@@ -155,8 +155,52 @@ assertions6 = [
     {"stage": "FETCH", "x2": 8}
 ]
 
+insts7 = [
+    "`MM[0]=32'b00000000100000000000000010010011;   // addi x1, x0, 8",
+    "`MM[1]=32'b00000000011100000000000100010011;   // addi x2, x0, 7", 
+    "`MM[2]=32'b00000010000100010000000110110011;   // mul  x3, x2, x1", 
+]
+
+assertions7 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x1": 8},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x2": 7},
+        {"stage": "DECODE"},
+        {"stage": "EX_R"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x3": 56},
+]
+
+insts8 = [
+    "`MM[0]=32'b00000000100000000000000010010011;   // addi x1, x0, 8",
+    "`MM[1]=32'b00000000011100000000000100010011;   // addi x2, x0, 7", 
+    "`MM[2]=32'b01000000001000001000000110110011;   // sub  x3, x2, x1", 
+]
+
+assertions8 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x1": 8},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x2": 7},
+        {"stage": "DECODE"},
+        {"stage": "EX_R"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x3": 1},
+]
+
 scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
-             (insts6, assertions6)]
+             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     for j, inst in enumerate(insts):
