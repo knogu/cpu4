@@ -82,6 +82,7 @@ module main_decoder(
     assign is_jalr = (opcode == 7'b1100111);
     assign is_jal = (opcode == 7'b1101111);
     assign is_lui = (opcode == 7'b0110111);
+    assign is_auipc = (opcode == 7'b0010111);
     wire is_load; 
     assign is_load = (opcode == 7'b0000011);
     wire is_i_calc;
@@ -117,17 +118,16 @@ module main_decoder(
     assign is_reg_write = (is_load & (stage == MEM_WB))
                         | (stage == ALU_WB)
                         | (is_jal);
-                        //   is_lui | is_auipc;
     assign is_inst_updated = (stage == DECODE); // not fetch, because at fetch, the next mem_read_addr is decided but its inst is not loaded yet
     assign is_read_from_result = (stage == MEM_READ | stage == MEM_WRITE);
     assign is_result_from_mem_read = (stage == MEM_WB);
     assign is_result_from_older_alu_out = (stage == BR | stage == JAL | stage == ALU_WB) | (stage == JALR);
-    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | | is_jal | is_jalr | is_lui;
+    assign is_2nd_op_imm = ((stage == DECODE & is_b)) | is_i | is_s | | is_jal | is_jalr | is_u;
     assign is_2nd_op_4 = (stage == FETCH) | (stage == JAL);
     assign is_pc_incr = (stage == FETCH);
     assign is_pc_updated = is_pc_incr | (stage == BR & is_alu_out_zero) | (stage == JAL) | (stage == JALR);
     assign is_1st_op_inst_pc = ((stage == DECODE) & (is_b | is_jal))
-                             | (stage == JAL) | (stage == JALR) ;
+                             | (stage == JAL) | (stage == JALR) | (is_auipc) ;
 
     assign alu_control = (is_r & funct7 == 7'b0000001 && funct3 == 3'b000) ? 4'b1001 : // mul
                          (is_r | is_i_calc) ? {funct7[5], funct3} :

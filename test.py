@@ -211,8 +211,26 @@ assertions9 = [
     {"stage": "FETCH", "x1": 4294963200}
 ]
 
+insts10 = [
+    "`MM[0]={20'b11111111111111111111,5'd1,7'b0010111}; // auipc x1, 1048575",
+    "`MM[1]={20'b11111111111111111111,5'd1,7'b0010111}; // auipc x1, 1048575",
+]
+
+assertions10 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x1": 4294963200},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x1": 4294963204},
+]
+
+
 scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
-             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9)]
+             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     for j, inst in enumerate(insts):
