@@ -266,7 +266,6 @@ module m_top();
     end
     initial #1900 $finish;
     initial begin
-      `define MM c.mem.mem
-      `include "asm.txt"
+      $readmemh("asm.hex", c.mem.mem);
     end
 endmodule

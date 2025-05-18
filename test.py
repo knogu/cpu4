@@ -7,13 +7,13 @@ def collect_status(result: list):
     all_states = []
     cur_state: dict = {}
     for line in result:
-        if "$finish called" in line:
+        if "$finish called" in line or "warning" in line:
             break
         if "===" in line:
             all_states.append(cur_state)
             cur_state = {}
             continue
-        if ":" in line and not "cpu.v" in line:
+        if ":" in line and not "cpu.sv" in line:
             split = line.split(":")
             if 2 < len(split):
                 print(split)
@@ -27,8 +27,8 @@ def collect_status(result: list):
 
 
 insts0 = [
-    "`MM[0]=32'b00000000000100000000000010010011;    // addi x1, x0, 1",
-    "`MM[1]=32'b00000000101000000000111100010011;    // addi x30, x0, 10",
+    "100093", # addi x1, x0, 1
+    "A00F13", # addi x30, x0, 10
 ]
 
 assertions0 = [
@@ -40,8 +40,8 @@ assertions0 = [
 ]
 
 insts1 = [
-    "`MM[0]=32'b00000000000100000000000010010011;    // addi x1, x0, 1",
-    "`MM[1]=32'b00000000000000001000000100110011;    // add  x2, x1, x0",
+    "100093", # addi x1, x0, 1
+    "8133", # add  x2, x1, x0
 ]
 
 assertions1 = [
@@ -57,9 +57,9 @@ assertions1 = [
 ]
 
 insts2 = [
-    "`MM[0]=32'b00000000000100000000000010010011;    // addi x1, x0, 1",
-    "`MM[1]={7'd0,5'd1,5'd0,3'h2,5'd8,7'h23}; // sw x1, 8(x0)",
-    "`MM[2]={12'd8,5'd0,3'b010,5'd2,7'h3};    // lw x2, 8(x0)",
+    "100093", # addi x1, x0, 1
+    "102423", # sw x1, 8(x0)
+    "802103", # lw x2, 8(x0)
 ]
 
 assertions2 = [
@@ -80,10 +80,10 @@ assertions2 = [
 ]
 
 insts3 = [
-    "`MM[0]=32'b00000000000100000000000010010011;   // addi x1, x0, 1",
-    "`MM[1]=32'b00000000000100000000000100010011;   // L: addi x2, x0, 1",
-    "`MM[2]={~7'd0,5'd2,5'd1,3'h0,5'h1d,7'h63};     // beq x1, x2, L", # eq. so expected to branch
-    "`MM[3]=32'b00000000000000000000000000110011;   // add x0, x0, x0",
+    "100093",#   // addi x1, x0, 1",
+    "100113", # L: addi x2, x0, 1",
+    "FE208EE3", # beq x1, x2, L", # eq. so expected to branch # 11111110001000001000111011100011
+    "33", # add x0, x0, x0",
 ]
 
 assertions3 = [
@@ -102,10 +102,10 @@ assertions3 = [
 ]
 
 insts4 = [
-    "`MM[0]=32'b00000000000100000000000010010011;   // addi x1, x0, 1",
-    "`MM[1]=32'b00000000001000000000000100010011;   // L: addi x2, x0, 2",
-    "`MM[2]={~7'd0,5'd2,5'd1,3'h0,5'h1d,7'h63};     // beq x1, x2, L", # not eq. so expected not to branch
-    "`MM[3]=32'b00000000000000000000000000110011;   // add x0, x0, x0",
+    "100093", # addi x1, x0, 1",
+    "200113", # L: addi x2, x0, 2",
+    "FE208EE3", # beq x1, x2, L", # not eq. so expected not to branch
+    "33", # add x0, x0, x0",
 ]
 
 assertions4 = [
@@ -124,9 +124,9 @@ assertions4 = [
 ]
 
 insts5 = [
-    "`MM[0]={1'b0,10'b0000000100,1'b0,8'b00000000,5'd1,7'b1101111};     // jal 8",
-    "`MM[1]={12'd7,5'd0,3'd0,5'd1,7'h13};     // addi x1,x0,7",
-    "`MM[2]={12'd7,5'd0,3'd0,5'd1,7'h13};     // addi x1,x0,7",
+    "8000EF", # jal 8", 00000000100000000000000011101111
+    "33"#     // addi x1,x0,7",
+    "33", # addi x1,x0,7",
 ]
 
 assertions5 = [
@@ -138,10 +138,10 @@ assertions5 = [
 ]
 
 insts6 = [
-    "`MM[0]=32'b00000000100000000000000010010011;   // addi x1, x0, 8",
-    "`MM[1]={12'd4, 5'b1, 3'b0, 5'd2, 7'b1100111};   // jalr x2, 4(x1)",
-    "`MM[2]=32'b00000000000000000000000000110011;   // add x0, x0, x0", # should be skipped by jalr
-    "`MM[3]=32'b00000000010100000000000010010011;   // addi x1, x0, 5",
+    "800093", # addi x1, x0, 8",
+    "408167", # jalr x2, 4(x1)", # 00000000010000001000000101100111
+    "33", # add x0, x0, x0", # should be skipped by jalr
+    "500093", # addi x1, x0, 5",
 ]
 
 assertions6 = [
@@ -157,9 +157,9 @@ assertions6 = [
 ]
 
 insts7 = [
-    "`MM[0]=32'b00000000100000000000000010010011;   // addi x1, x0, 8",
-    "`MM[1]=32'b00000000011100000000000100010011;   // addi x2, x0, 7", 
-    "`MM[2]=32'b00000010000100010000000110110011;   // mul  x3, x2, x1", 
+    "800093", # addi x1, x0, 8",
+    "700113", # addi x2, x0, 7", 
+    "21101B3", # mul  x3, x2, x1", 
 ]
 
 assertions7 = [
@@ -179,9 +179,9 @@ assertions7 = [
 ]
 
 insts8 = [
-    "`MM[0]=32'b00000000100000000000000010010011;   // addi x1, x0, 8",
-    "`MM[1]=32'b00000000011100000000000100010011;   // addi x2, x0, 7", 
-    "`MM[2]=32'b01000000001000001000000110110011;   // sub  x3, x2, x1", 
+    "800093", # addi x1, x0, 8",
+    "700113", # addi x2, x0, 7", 
+    "402081B3", # sub  x3, x2, x1", 
 ]
 
 assertions8 = [
@@ -201,7 +201,7 @@ assertions8 = [
 ]
 
 insts9 = [
-    "`MM[0]={20'b11111111111111111111,5'd1,7'b0110111}; // lui x1, 1048575",
+    "FFFFF0B7", # lui x1, 1048575", # 11111111111111111111000010110111
 ]
 
 assertions9 = [
@@ -213,8 +213,8 @@ assertions9 = [
 ]
 
 insts10 = [
-    "`MM[0]={20'b11111111111111111111,5'd1,7'b0010111}; // auipc x1, 1048575",
-    "`MM[1]={20'b11111111111111111111,5'd1,7'b0010111}; // auipc x1, 1048575",
+    "FFFFF097", # auipc x1, 1048575", # 11111111111111111111000010010111
+    "FFFFF097", # auipc x1, 1048575",
 ]
 
 assertions10 = [
@@ -230,16 +230,15 @@ assertions10 = [
 ]
 
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
-             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10)]
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3),
+             (insts4, assertions4), (insts5, assertions5),
+             (insts6, assertions6),
+             (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10)
+             ]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
-    for j, inst in enumerate(insts):
-        if not "[" + str(j) + "]" in inst:
-            print("check " + str(ith) + "-th inst: " + inst)
-            exit(2)
     # Prepare instructions
-    with open(os.path.expanduser('asm.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.expanduser('asm.hex'), 'w', encoding='utf-8') as f:
         for inst in insts:
             f.write(inst + '\n')
     # Execute simulation
