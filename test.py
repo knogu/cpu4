@@ -28,6 +28,7 @@ def collect_status(result: list):
 
 insts0 = [
     "`MM[0]=32'b00000000000100000000000010010011;    // addi x1, x0, 1",
+    "`MM[1]=32'b00000000101000000000111100010011;    // addi x30, x0, 10",
 ]
 
 assertions0 = [

@@ -12,6 +12,7 @@ module m_RF(input wire clk,
   reg[31:0] r_rs2_val = 0;
   always_ff @(posedge clk) begin
     if (w_write_enabled) mem[w_write_addr] <= w_write_data;
+    if (w_write_enabled & (w_write_addr == 30) & (w_write_data == 10)) $finish; // for simulation
     // r_rs1_val <= (rs1 == 5'd0) ? 32'd0 : mem[rs1];
     // r_rs2_val <= (rs2 == 5'd0) ? 32'd0 : mem[rs2];
   end
