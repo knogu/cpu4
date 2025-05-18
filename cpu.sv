@@ -266,6 +266,6 @@ module m_top();
     end
     initial #1900 $finish;
     initial begin
-      $readmemh("asm.hex", c.mem.mem);
+      $readmemb("asm.bin", c.mem.mem);
     end
 endmodule

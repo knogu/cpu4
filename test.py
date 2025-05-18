@@ -27,8 +27,8 @@ def collect_status(result: list):
 
 
 insts0 = [
-    "100093", # addi x1, x0, 1
-    "A00F13", # addi x30, x0, 10
+    "00000000100000000000010010011", # addi x1, x0, 1
+    "0000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions0 = [
@@ -40,8 +40,8 @@ assertions0 = [
 ]
 
 insts1 = [
-    "100093", # addi x1, x0, 1
-    "8133", # add  x2, x1, x0
+    "0000000100000000000010010011", # addi x1, x0, 1
+    "0000000000001000000100110011", # add  x2, x1, x0
 ]
 
 assertions1 = [
@@ -57,9 +57,9 @@ assertions1 = [
 ]
 
 insts2 = [
-    "100093", # addi x1, x0, 1
-    "102423", # sw x1, 8(x0)
-    "802103", # lw x2, 8(x0)
+    "0000100000000000010010011", # addi x1, x0, 1
+    "0000100000010010000100011", # sw x1, 8(x0)
+    "0000100000000010000100000011", # lw x2, 8(x0)
 ]
 
 assertions2 = [
@@ -80,10 +80,10 @@ assertions2 = [
 ]
 
 insts3 = [
-    "100093",#   // addi x1, x0, 1",
-    "100113", # L: addi x2, x0, 1",
-    "FE208EE3", # beq x1, x2, L", # eq. so expected to branch # 11111110001000001000111011100011
-    "33", # add x0, x0, x0",
+    "00000000000100000000000010010011",#   // addi x1, x0, 1",
+    "00000000000100000000000100010011", # L: addi x2, x0, 1",
+    "11111110001000001000111011100011", # beq x1, x2, L", # eq. so expected to branch # 11111110001000001000111011100011
+    "110011", # add x0, x0, x0",
 ]
 
 assertions3 = [
@@ -102,10 +102,10 @@ assertions3 = [
 ]
 
 insts4 = [
-    "100093", # addi x1, x0, 1",
-    "200113", # L: addi x2, x0, 2",
-    "FE208EE3", # beq x1, x2, L", # not eq. so expected not to branch
-    "33", # add x0, x0, x0",
+    "00000000000100000000000010010011", # addi x1, x0, 1",
+    "00000000001000000000000100010011", # L: addi x2, x0, 2",
+    "11111110001000001000111011100011", # beq x1, x2, L", # not eq. so expected not to branch
+    "110011", # add x0, x0, x0",
 ]
 
 assertions4 = [
@@ -124,9 +124,9 @@ assertions4 = [
 ]
 
 insts5 = [
-    "8000EF", # jal 8", 00000000100000000000000011101111
-    "33"#     // addi x1,x0,7",
-    "33", # addi x1,x0,7",
+    "00000000100000000000000011101111", # jal 8", 00000000100000000000000011101111
+    "110011"#     // addi x1,x0,7",
+    "110011", # addi x1,x0,7",
 ]
 
 assertions5 = [
@@ -138,10 +138,10 @@ assertions5 = [
 ]
 
 insts6 = [
-    "800093", # addi x1, x0, 8",
-    "408167", # jalr x2, 4(x1)", # 00000000010000001000000101100111
-    "33", # add x0, x0, x0", # should be skipped by jalr
-    "500093", # addi x1, x0, 5",
+    "00000000100000000000000010010011", # addi x1, x0, 8",
+    "00000000010000001000000101100111", # jalr x2, 4(x1)"
+    "110011", # add x0, x0, x0", # should be skipped by jalr
+    "10100000000000010010011", # addi x1, x0, 5",
 ]
 
 assertions6 = [
@@ -157,9 +157,9 @@ assertions6 = [
 ]
 
 insts7 = [
-    "800093", # addi x1, x0, 8",
-    "700113", # addi x2, x0, 7", 
-    "21101B3", # mul  x3, x2, x1", 
+    "0000100000000000000010010011", # addi x1, x0, 8",
+    "0000011100000000000100010011", # addi x2, x0, 7", 
+    "0010000100010000000110110011", # mul  x3, x2, x1", 
 ]
 
 assertions7 = [
@@ -179,9 +179,9 @@ assertions7 = [
 ]
 
 insts8 = [
-    "800093", # addi x1, x0, 8",
-    "700113", # addi x2, x0, 7", 
-    "402081B3", # sub  x3, x2, x1", 
+    "0000000100000000000000010010011", # addi x1, x0, 8",
+    "0000000011100000000000100010011", # addi x2, x0, 7", 
+    "1000000001000001000000110110011", # sub  x3, x2, x1", 
 ]
 
 assertions8 = [
@@ -201,7 +201,7 @@ assertions8 = [
 ]
 
 insts9 = [
-    "FFFFF0B7", # lui x1, 1048575", # 11111111111111111111000010110111
+    "11111111111111111111000010110111", # lui x1, 1048575"
 ]
 
 assertions9 = [
@@ -213,8 +213,8 @@ assertions9 = [
 ]
 
 insts10 = [
-    "FFFFF097", # auipc x1, 1048575", # 11111111111111111111000010010111
-    "FFFFF097", # auipc x1, 1048575",
+    "11111111111111111111000010010111", # auipc x1, 1048575", # 
+    "11111111111111111111000010010111", # auipc x1, 1048575",
 ]
 
 assertions10 = [
@@ -230,15 +230,13 @@ assertions10 = [
 ]
 
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3),
-             (insts4, assertions4), (insts5, assertions5),
-             (insts6, assertions6),
-             (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10)
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
+             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10)
              ]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     # Prepare instructions
-    with open(os.path.expanduser('asm.hex'), 'w', encoding='utf-8') as f:
+    with open(os.path.expanduser('asm.bin'), 'w', encoding='utf-8') as f:
         for inst in insts:
             f.write(inst + '\n')
     # Execute simulation
