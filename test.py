@@ -83,8 +83,8 @@ assertions2 = [
 
 insts3 = [
     "00000000000100000000000010010011",#   // addi x1, x0, 1",
-    "00000000000100000000000100010011", # L: addi x2, x2, 1",
-    "11111110001000001000111011100011", # beq x1, x2, L", # eq. so expected to branch # 11111110001000001000111011100011
+    "00000000000100010000000100010011", # L: addi x2, x2, 1",
+    "11111110001000001000111011100011", # beq x1, x2, L", # eq. so expected to branch
     "110011", # add x0, x0, x0",
     "00000101000000000111100010011", # addi x30, x0, 10
 ]
@@ -102,6 +102,10 @@ assertions3 = [
         {"stage": "DECODE", "pc_cur_inst": 8, "1st_op": 8, "2nd_op": -4, "alu_control": "0b0000", "alu_out": 4},
         {"stage": "BR", "1st_op": 1, "2nd_op": 1, "alu_control": "0b1000", "alu_out": 0, "result": 4},
     {"stage": "FETCH", "pc": 4},
+        {"stage": "DECODE"},
+        {"stage": "EX_I", "rs1": 2, "1st_op": 1, "2nd_op": 1},
+        {"stage": "ALU_WB", },
+    {"stage": "FETCH", "x2": 2},
 ]
 
 insts4 = [
@@ -189,6 +193,7 @@ insts8 = [
     "0000000100000000000000010010011", # addi x1, x0, 8",
     "0000000011100000000000100010011", # addi x2, x0, 7", 
     "1000000001000001000000110110011", # sub  x3, x2, x1", 
+    "00000101000000000111000010011", # addi x28, x0, 10
     "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
@@ -253,8 +258,7 @@ assertions11 = [
     {"stage": "FETCH", "x2": 1024, "x1": 0},
 ]
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3),
-             (insts4, assertions4), (insts5, assertions5),
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
              (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10), (insts11, assertions11)
              ]
 

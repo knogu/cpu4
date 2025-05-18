@@ -130,11 +130,12 @@ module main_decoder(
     assign is_1st_op_inst_pc = ((stage == DECODE) & (is_b | is_jal))
                              | (stage == JAL) | (stage == JALR) | (is_auipc) ;
 
-    assign alu_control = (is_r & funct7 == 7'b0000001 & funct3 == 3'b000) ? 4'b1001 : // mul
-                         is_r ? {funct7[5], funct3} : // todo: need fix
+    assign alu_control = (stage == FETCH) ? 4'b0000 :
+                         (is_r & funct7 == 7'b0000001 & funct3 == 3'b000) ? 4'b1001 : // mul
+                         is_r ? {funct7[5], funct3} :
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
                          is_lui ? 4'b1111 :
-                         is_i_calc ? {1'b0, funct3} :
+                         is_i_calc ? {1'b0, funct3} : // todo: need fix
                          4'b0000;
 endmodule
 
@@ -276,7 +277,7 @@ module m_top();
         $display("x10:         %d", c.rf.mem[10]);
         $display("===================");
     end
-    initial #1900 $finish;
+    // initial #1900 $finish;
     initial begin
       $readmemb("asm.bin", c.mem.mem);
     end
