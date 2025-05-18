@@ -28,7 +28,7 @@ def collect_status(result: list):
 
 insts0 = [
     "00000000100000000000010010011", # addi x1, x0, 1
-    "0000101000000000111100010011", # addi x30, x0, 10
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions0 = [
@@ -42,6 +42,7 @@ assertions0 = [
 insts1 = [
     "0000000100000000000010010011", # addi x1, x0, 1
     "0000000000001000000100110011", # add  x2, x1, x0
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions1 = [
@@ -60,6 +61,7 @@ insts2 = [
     "0000100000000000010010011", # addi x1, x0, 1
     "0000100000010010000100011", # sw x1, 8(x0)
     "0000100000000010000100000011", # lw x2, 8(x0)
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions2 = [
@@ -81,9 +83,10 @@ assertions2 = [
 
 insts3 = [
     "00000000000100000000000010010011",#   // addi x1, x0, 1",
-    "00000000000100000000000100010011", # L: addi x2, x0, 1",
+    "00000000000100000000000100010011", # L: addi x2, x2, 1",
     "11111110001000001000111011100011", # beq x1, x2, L", # eq. so expected to branch # 11111110001000001000111011100011
     "110011", # add x0, x0, x0",
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions3 = [
@@ -106,6 +109,7 @@ insts4 = [
     "00000000001000000000000100010011", # L: addi x2, x0, 2",
     "11111110001000001000111011100011", # beq x1, x2, L", # not eq. so expected not to branch
     "110011", # add x0, x0, x0",
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions4 = [
@@ -127,6 +131,7 @@ insts5 = [
     "00000000100000000000000011101111", # jal 8", 00000000100000000000000011101111
     "110011"#     // addi x1,x0,7",
     "110011", # addi x1,x0,7",
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions5 = [
@@ -142,6 +147,7 @@ insts6 = [
     "00000000010000001000000101100111", # jalr x2, 4(x1)"
     "110011", # add x0, x0, x0", # should be skipped by jalr
     "10100000000000010010011", # addi x1, x0, 5",
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions6 = [
@@ -160,6 +166,7 @@ insts7 = [
     "0000100000000000000010010011", # addi x1, x0, 8",
     "0000011100000000000100010011", # addi x2, x0, 7", 
     "0010000100010000000110110011", # mul  x3, x2, x1", 
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions7 = [
@@ -182,6 +189,7 @@ insts8 = [
     "0000000100000000000000010010011", # addi x1, x0, 8",
     "0000000011100000000000100010011", # addi x2, x0, 7", 
     "1000000001000001000000110110011", # sub  x3, x2, x1", 
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions8 = [
@@ -202,6 +210,7 @@ assertions8 = [
 
 insts9 = [
     "11111111111111111111000010110111", # lui x1, 1048575"
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions9 = [
@@ -215,6 +224,7 @@ assertions9 = [
 insts10 = [
     "11111111111111111111000010010111", # auipc x1, 1048575", # 
     "11111111111111111111000010010111", # auipc x1, 1048575",
+    "00000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions10 = [
@@ -229,9 +239,23 @@ assertions10 = [
     {"stage": "FETCH", "x1": 4294963204},
 ]
 
+insts11 = [
+    "01000000000000000000000100010011", # addi sp, x0, 1024
+    "0000101000000000111100010011", # addi x30, x0, 10
+    "00000101000000000111100010011", # addi x30, x0, 10
+]
 
-scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
-             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10)
+assertions11 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x2": 1024, "x1": 0},
+]
+
+scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3),
+             (insts4, assertions4), (insts5, assertions5),
+             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10), (insts11, assertions11)
              ]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):

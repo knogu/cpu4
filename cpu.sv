@@ -1,23 +1,23 @@
 module m_RF(input wire clk,
     input wire[4:0] rs1,
     input wire[4:0] rs2,
-    input wire w_write_enabled,
-    input wire[4:0] w_write_addr,
-    input wire[31:0] w_write_data,
-    output wire[31:0] w_rs1_val,
-    output wire[31:0] w_rs2_val);
+    input wire write_enabled,
+    input wire[4:0] write_addr,
+    input wire[31:0] write_data,
+    output wire[31:0] rs1_val,
+    output wire[31:0] rs2_val);
 
   reg[31:0] mem[0:63];
   reg[31:0] r_rs1_val = 0;
   reg[31:0] r_rs2_val = 0;
   always_ff @(posedge clk) begin
-    if (w_write_enabled) mem[w_write_addr] <= w_write_data;
-    if (w_write_enabled & (w_write_addr == 30) & (w_write_data == 10)) $finish; // for simulation
+    if (write_enabled) mem[write_addr] <= write_data;
+    if (write_enabled & (write_addr == 30) & (write_data == 10)) $finish; // for simulation
     // r_rs1_val <= (rs1 == 5'd0) ? 32'd0 : mem[rs1];
     // r_rs2_val <= (rs2 == 5'd0) ? 32'd0 : mem[rs2];
   end
-  assign w_rs1_val = (rs1 == 5'd0) ? 32'd0 : mem[rs1];
-  assign w_rs2_val = (rs2 == 5'd0) ? 32'd0 : mem[rs2];
+  assign rs1_val = (rs1 == 5'd0) ? 32'd0 : mem[rs1];
+  assign rs2_val = (rs2 == 5'd0) ? 32'd0 : mem[rs2];
   integer i; initial for (i=0; i<32; i=i+1) mem[i]=0;
 endmodule
 
@@ -130,10 +130,11 @@ module main_decoder(
     assign is_1st_op_inst_pc = ((stage == DECODE) & (is_b | is_jal))
                              | (stage == JAL) | (stage == JALR) | (is_auipc) ;
 
-    assign alu_control = (is_r & funct7 == 7'b0000001 && funct3 == 3'b000) ? 4'b1001 : // mul
-                         (is_r | is_i_calc) ? {funct7[5], funct3} :
+    assign alu_control = (is_r & funct7 == 7'b0000001 & funct3 == 3'b000) ? 4'b1001 : // mul
+                         is_r ? {funct7[5], funct3} : // todo: need fix
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
-                         (is_lui) ? 4'b1111 :
+                         is_lui ? 4'b1111 :
+                         is_i_calc ? {1'b0, funct3} :
                          4'b0000;
 endmodule
 
@@ -257,11 +258,22 @@ module m_top();
         $display("alu_control:    0b%4b", c.alu_control);
         $display("alu_out:     %d", c.alu_out);
         $display("result:     %d", c.result);
+        $display("is_reg_write:     %b", c.is_reg_write);
         $display("rd:         %d", c.inst[11:7]);
         $display("mem_read_addr: %d", c.mem_read_addr);
+        $display("rf.reg_to_write: %d", c.rf.write_addr);
+        $display("rf.write_enabled: %d", c.rf.write_enabled);
+        $display("rf.write_data: %d", c.rf.write_data);
         $display("x1:         %d", c.rf.mem[1]);
         $display("x2:         %d", c.rf.mem[2]);
         $display("x3:         %d", c.rf.mem[3]);
+        $display("x4:         %d", c.rf.mem[4]);
+        $display("x5:         %d", c.rf.mem[5]);
+        $display("x6:         %d", c.rf.mem[6]);
+        $display("x7:         %d", c.rf.mem[7]);
+        $display("x8:         %d", c.rf.mem[8]);
+        $display("x9:         %d", c.rf.mem[9]);
+        $display("x10:         %d", c.rf.mem[10]);
         $display("===================");
     end
     initial #1900 $finish;
