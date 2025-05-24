@@ -24,6 +24,7 @@ endmodule
 module m_alu(input wire[31:0] rs1_val, input wire[31:0] second_operand, input wire [3:0] alu_control, output wire[31:0] alu_out);
   assign alu_out = (alu_control == 4'b1000) ? rs1_val - second_operand :
                    (alu_control == 4'b1001) ? rs1_val * second_operand :
+                   (alu_control == 4'b0100) ? rs1_val / second_operand :
                    (alu_control == 4'b0010) ? rs1_val & second_operand :
                    (alu_control == 4'b0011) ? rs1_val | second_operand :
                    (alu_control == 4'b1111) ? second_operand :
@@ -132,6 +133,7 @@ module main_decoder(
 
     assign alu_control = (stage == FETCH) ? 4'b0000 :
                          (is_r & funct7 == 7'b0000001 & funct3 == 3'b000) ? 4'b1001 : // mul
+                         (is_r & funct7 == 7'b0000001 & funct3 == 3'b100) ? 4'b0100 : // mul
                          is_r ? {funct7[5], funct3} :
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
                          is_lui ? 4'b1111 :
@@ -265,16 +267,16 @@ module m_top();
         $display("rf.reg_to_write: %d", c.rf.write_addr);
         $display("rf.write_enabled: %d", c.rf.write_enabled);
         $display("rf.write_data: %d", c.rf.write_data);
-        $display("x1:         %d", c.rf.mem[1]);
-        $display("x2:         %d", c.rf.mem[2]);
-        $display("x3:         %d", c.rf.mem[3]);
-        $display("x4:         %d", c.rf.mem[4]);
-        $display("x5:         %d", c.rf.mem[5]);
-        $display("x6:         %d", c.rf.mem[6]);
-        $display("x7:         %d", c.rf.mem[7]);
-        $display("x8:         %d", c.rf.mem[8]);
-        $display("x9:         %d", c.rf.mem[9]);
-        $display("x10:         %d", c.rf.mem[10]);
+        $display("x1:          %d", $signed(c.rf.mem[1]));
+        $display("x2:          %d", $signed(c.rf.mem[2]));
+        $display("x3:          %d", $signed(c.rf.mem[3]));
+        $display("x4:          %d", $signed(c.rf.mem[4]));
+        $display("x5:          %d", $signed(c.rf.mem[5]));
+        $display("x6:          %d", $signed(c.rf.mem[6]));
+        $display("x7:          %d", $signed(c.rf.mem[7]));
+        $display("x8:          %d", $signed(c.rf.mem[8]));
+        $display("x9:          %d", $signed(c.rf.mem[9]));
+        $display("x10:         %d", $signed(c.rf.mem[10]));
         $display("===================");
     end
     // initial #1900 $finish;

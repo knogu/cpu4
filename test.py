@@ -258,9 +258,27 @@ assertions11 = [
     {"stage": "FETCH", "x2": 1024, "x1": 0},
 ]
 
+insts12 = [
+    "01000000000000000000000100010011", # addi sp, x0, 1024
+    "01000000000000000000000100010011", # addi sp, x0, 1024
+    "00000101000000000111100010011", # addi x30, x0, 10
+]
+
+assertions12 = [
+    {"stage": "FETCH"},
+        {"stage": "DECODE"},
+        {"stage": "EX_I"},
+        {"stage": "ALU_WB"},
+    {"stage": "FETCH", "x2": 1024, "x1": 0},
+        {"stage": "DECODE", "x2": 1024, "x1": 0},
+        {"stage": "EX_I", "x2": 1024, "x1": 0},
+        {"stage": "ALU_WB", "x2": 1024, "x1": 0},
+    {"stage": "FETCH", "x2": 1024, "x1": 0},
+]
+
 scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
-             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10), (insts11, assertions11)
-             ]
+             (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10), (insts11, assertions11),
+             (insts12, assertions12)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     # Prepare instructions
