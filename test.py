@@ -149,9 +149,9 @@ assertions5 = [
 insts6 = [
     "00000000100000000000000010010011", # addi x1, x0, 8",
     "00000000010000001000000101100111", # jalr x2, 4(x1)"
-    "110011", # add x0, x0, x0", # should be skipped by jalr
-    "10100000000000010010011", # addi x1, x0, 5",
-    "00000101000000000111100010011", # addi x30, x0, 10
+    "00000000000000000000000000110011", # add x0, x0, x0", # should be skipped by jalr
+    "00000000010100000000000010010011", # addi x1, x0, 5",
+    "00000000101000000000111100010011", # addi x30, x0, 10
 ]
 
 assertions6 = [
@@ -278,7 +278,7 @@ assertions12 = [
 
 scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
              (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10), (insts11, assertions11),
-             (insts2, assertions2)]
+             (insts12, assertions12), (insts6, assertions6)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     # Prepare instructions

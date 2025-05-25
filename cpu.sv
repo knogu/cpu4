@@ -160,7 +160,7 @@ module m_imm_gen(input wire w_clk,
                  0;
 endmodule
 
-module cpu(input wire clk);
+module cpu(input wire clk, output wire [31:0] result); // result: for displaying result by LED in FPGA
     // fetch
     reg [31:0] r_pc = 0;
     always_ff @( posedge clk ) begin
@@ -231,7 +231,6 @@ module cpu(input wire clk);
     end
 
     // memory access
-    wire[31:0] result;
     assign result = is_result_from_mem_read ? read_data :
                     is_result_from_older_alu_out ? r_alu_res :
                     alu_out;
@@ -242,7 +241,8 @@ endmodule
 
 module m_top();
     reg r_clk=0; initial #150 forever #50 r_clk = ~r_clk;
-    cpu c(r_clk);
+    wire [31:0] result;
+    cpu c(r_clk, result);
     initial #99 forever begin
         #100;
         $display("stage: %0s", c.main_decoder.stage.name());
