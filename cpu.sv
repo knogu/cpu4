@@ -169,7 +169,7 @@ module cpu(input wire clk);
     wire [31:0] read_data;
     wire [31:0] mem_addr;
     wire is_read_from_result;
-    m_mux m({26'b0, r_pc[7:2]}, result, is_read_from_result, mem_addr);
+    m_mux m(r_pc[31:2], result, is_read_from_result, mem_addr);
     mem mem(mem_addr, clk, is_mem_write, rs2_val, read_data); // pipeline regs in fetch stage
 
     // decode
@@ -306,9 +306,31 @@ module m_top();
         $display("x10_h:         %h", c.rf.mem[10]);
 
         $display("is_mem_write:          %h", c.mem.is_write_enabled);
+
+        $display("sp:          %d", $signed(c.rf.mem[2]));
+        $display("fp:          %d", $signed(c.rf.mem[8]));
+
+        $display("\n");
+
+        $display("m[996]:          %h", c.mem.mem[996]);
+        $display("m[1000]:          %h", c.mem.mem[1000]);
+        $display("m[1004]:          %h", c.mem.mem[1004]);
+        $display("m[1008]:          %h", c.mem.mem[1008]);
+        $display("m[1012]:          %h", c.mem.mem[1012]);
         $display("m[1016]:          %h", c.mem.mem[1016]);
         $display("m[1020]:          %h", c.mem.mem[1020]);
         $display("m[1024]:          %h", c.mem.mem[1024]);
+
+        $display("\n");
+
+        $display("m[996]:           %d", c.mem.mem[996]);
+        $display("m[1000]:          %d", c.mem.mem[1000]);
+        $display("m[1004]:          %d", c.mem.mem[1004]);
+        $display("m[1008]:          %d", c.mem.mem[1008]);
+        $display("m[1012]:          %d", c.mem.mem[1012]);
+        $display("m[1016]:          %d", c.mem.mem[1016]);
+        $display("m[1020]:          %d", c.mem.mem[1020]);
+        $display("m[1024]:          %d", c.mem.mem[1024]);
 
         $display("===================");
 
