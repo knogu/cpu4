@@ -7,8 +7,8 @@ module mem(input wire [31:0] addr,
     reg [31:0] r_out;
     reg[31:0] mem[0:65536];
     always_ff @(posedge clk) begin
-      r_out <= mem[addr[5:0]];
-      if (is_write_enabled) mem[addr[5:0]] <= write_data;
+      r_out <= mem[addr];
+      if (is_write_enabled) mem[addr] <= write_data;
     end
     assign out = r_out;
 endmodule

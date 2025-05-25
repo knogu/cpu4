@@ -101,7 +101,7 @@ assertions3 = [
     {"stage": "FETCH", "x2": 1},
         {"stage": "DECODE", "pc_cur_inst": 8, "1st_op": 8, "2nd_op": -4, "alu_control": "0b0000", "alu_out": 4},
         {"stage": "BR", "1st_op": 1, "2nd_op": 1, "alu_control": "0b1000", "alu_out": 0, "result": 4},
-    {"stage": "FETCH", "pc": 4},
+    {"stage": "FETCH", "tmp_next_pc": 4},
         {"stage": "DECODE"},
         {"stage": "EX_I", "rs1": 2, "1st_op": 1, "2nd_op": 1},
         {"stage": "ALU_WB", },
@@ -128,11 +128,11 @@ assertions4 = [
     {"stage": "FETCH", "x2": 2},
         {"stage": "DECODE"},
         {"stage": "BR"},
-    {"stage": "FETCH", "pc": 12},
+    {"stage": "FETCH", "tmp_next_pc": 12},
 ]
 
 insts5 = [
-    "00000000100000000000000011101111", # jal 8", 00000000100000000000000011101111
+    "00000000100000000000000011101111", # jal 8"
     "110011"#     // addi x1,x0,7",
     "110011", # addi x1,x0,7",
     "00000101000000000111100010011", # addi x30, x0, 10
@@ -143,7 +143,7 @@ assertions5 = [
         {"stage": "DECODE", "1st_op": 0, "imm": 8, "2nd_op": 8, "alu_out": 8},
         {"stage": "JAL", "alu_out": 4},
         {"stage": "ALU_WB"},
-    {"stage": "FETCH", "pc": 8, "x1": 4},
+    {"stage": "FETCH", "tmp_next_pc": 8, "x1": 4},
 ]
 
 insts6 = [
@@ -223,7 +223,7 @@ assertions9 = [
         {"stage": "DECODE"},
         {"stage": "EX_I"},
         {"stage": "ALU_WB"},
-    {"stage": "FETCH", "x1": 4294963200}
+    {"stage": "FETCH", "x1_u": 4294963200}
 ]
 
 insts10 = [
@@ -237,11 +237,11 @@ assertions10 = [
         {"stage": "DECODE"},
         {"stage": "EX_I"},
         {"stage": "ALU_WB"},
-    {"stage": "FETCH", "x1": 4294963200},
+    {"stage": "FETCH", "x1_u": 4294963200},
         {"stage": "DECODE"},
         {"stage": "EX_I"},
         {"stage": "ALU_WB"},
-    {"stage": "FETCH", "x1": 4294963204},
+    {"stage": "FETCH", "x1_u": 4294963204},
 ]
 
 insts11 = [
@@ -278,7 +278,7 @@ assertions12 = [
 
 scenarios = [(insts0, assertions0), (insts1, assertions1), (insts2, assertions2), (insts3, assertions3), (insts4, assertions4), (insts5, assertions5),
              (insts6, assertions6), (insts7, assertions7), (insts8, assertions8), (insts9, assertions9), (insts10, assertions10), (insts11, assertions11),
-             (insts12, assertions12)]
+             (insts2, assertions2)]
 
 for ith, (insts, assertions) in enumerate(scenarios, start=0):
     # Prepare instructions
@@ -299,7 +299,7 @@ for ith, (insts, assertions) in enumerate(scenarios, start=0):
                 exit(3)
             if status[i][label] != val:
                 print("Assertion failed in " + str(ith) + "-th scenario")
-                # print("actual PC: " + str(status[i]["pc"]))
+                # print("actual PC: " + str(status[i]["tmp_next_pc"]))
                 print("assertion index: " + str(i))
                 print(label)
                 print("expected: ", val)

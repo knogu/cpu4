@@ -24,11 +24,12 @@ endmodule
 module m_alu(input wire[31:0] rs1_val, input wire[31:0] second_operand, input wire [3:0] alu_control, output wire[31:0] alu_out);
   assign alu_out = (alu_control == 4'b1000) ? rs1_val - second_operand :
                    (alu_control == 4'b1001) ? rs1_val * second_operand :
-                   (alu_control == 4'b0100) ? rs1_val / second_operand :
-                   (alu_control == 4'b0010) ? rs1_val & second_operand :
-                   (alu_control == 4'b0011) ? rs1_val | second_operand :
+                   (alu_control == 4'b1010) ? rs1_val / second_operand :
+                   (alu_control == 4'b0111) ? rs1_val & second_operand :
+                   (alu_control == 4'b0110) ? rs1_val | second_operand :
+                   (alu_control == 4'b0100) ? rs1_val ^ second_operand :
                    (alu_control == 4'b1111) ? second_operand :
-                   (alu_control == 4'b0101) ? ($signed(rs1_val) < $signed(second_operand)) :
+                   (alu_control == 4'b0010) ? ($signed(rs1_val) < $signed(second_operand)) :
                    rs1_val + second_operand;
 endmodule
 
@@ -119,8 +120,8 @@ module main_decoder(
     assign is_mem_write = (stage == MEM_WRITE);
     assign is_reg_write = (is_load & (stage == MEM_WB))
                         | (stage == ALU_WB)
-                        | (is_jal);
-    assign is_inst_updated = (stage == DECODE); // not fetch, because at fetch, the next mem_read_addr is decided but its inst is not loaded yet
+                        | (stage == JAL);
+    assign is_inst_updated = (stage == DECODE); // not fetch, because at fetch, the next mem_addr is decided but its inst is not loaded yet
     assign is_read_from_result = (stage == MEM_READ | stage == MEM_WRITE);
     assign is_result_from_mem_read = (stage == MEM_WB);
     assign is_result_from_older_alu_out = (stage == BR | stage == JAL | stage == ALU_WB) | (stage == JALR);
@@ -133,7 +134,7 @@ module main_decoder(
 
     assign alu_control = (stage == FETCH) ? 4'b0000 :
                          (is_r & funct7 == 7'b0000001 & funct3 == 3'b000) ? 4'b1001 : // mul
-                         (is_r & funct7 == 7'b0000001 & funct3 == 3'b100) ? 4'b0100 : // mul
+                         (is_r & funct7 == 7'b0000001 & funct3 == 3'b100) ? 4'b1010 : // div
                          is_r ? {funct7[5], funct3} :
                          (is_b & (stage == BR)) ? 4'b1000 : // todo: not 4'b1000 in some B insts
                          is_lui ? 4'b1111 :
@@ -166,10 +167,10 @@ module cpu(input wire clk);
         if (is_pc_updated) r_pc <= {result[31:1], 1'b0}; // handle &~1 for jalr. Anyway the least-significant bit is not used anywhere
     end
     wire [31:0] read_data;
-    wire [31:0] mem_read_addr;
+    wire [31:0] mem_addr;
     wire is_read_from_result;
-    m_mux m({26'b0, r_pc[7:2]}, result, is_read_from_result, mem_read_addr);
-    mem mem(mem_read_addr, clk, is_mem_write, rs2_val, read_data); // pipeline regs in fetch stage
+    m_mux m({26'b0, r_pc[7:2]}, result, is_read_from_result, mem_addr);
+    mem mem(mem_addr, clk, is_mem_write, rs2_val, read_data); // pipeline regs in fetch stage
 
     // decode
     wire[31:0] rs1_val, rs2_val;
@@ -247,7 +248,9 @@ module m_top();
         $display("stage: %0s", c.main_decoder.stage.name());
         $display("inst:  0b%32b", c.inst);
         $display("pc_cur_inst:         %d", c.pc_cur_inst);
-        $display("pc:         %d", c.r_pc);
+        $display("pc_cur_inst_hex:         %h", c.pc_cur_inst);
+        $display("tmp_next_pc:         %d", c.r_pc);
+        $display("tmp_next_pc_hex:         %h", c.r_pc);
         $display("is_pc_incr:          %d", c.is_pc_incr);
         $display("rs1:                %d", c.inst[19:15]);
         $display("rs1_val:    %d", c.rs1_val);
@@ -260,10 +263,12 @@ module m_top();
         $display("2nd_op_u:     %d", c.second_operand);
         $display("alu_control:    0b%4b", c.alu_control);
         $display("alu_out:     %d", c.alu_out);
+        $display("alu_out_h:     %h", c.alu_out);
         $display("result:     %d", c.result);
+        $display("is_jal:     %b", c.main_decoder.is_jal);
         $display("is_reg_write:     %b", c.is_reg_write);
         $display("rd:         %d", c.inst[11:7]);
-        $display("mem_read_addr: %d", c.mem_read_addr);
+        $display("mem_addr: %d", c.mem_addr);
         $display("rf.reg_to_write: %d", c.rf.write_addr);
         $display("rf.write_enabled: %d", c.rf.write_enabled);
         $display("rf.write_data: %d", c.rf.write_data);
@@ -277,7 +282,36 @@ module m_top();
         $display("x8:          %d", $signed(c.rf.mem[8]));
         $display("x9:          %d", $signed(c.rf.mem[9]));
         $display("x10:         %d", $signed(c.rf.mem[10]));
+
+        $display("x1_u:          %d", c.rf.mem[1]);
+        $display("x2_u:          %d", c.rf.mem[2]);
+        $display("x3_u:          %d", c.rf.mem[3]);
+        $display("x4_u:          %d", c.rf.mem[4]);
+        $display("x5_u:          %d", c.rf.mem[5]);
+        $display("x6_u:          %d", c.rf.mem[6]);
+        $display("x7_u:          %d", c.rf.mem[7]);
+        $display("x8_u:          %d", c.rf.mem[8]);
+        $display("x9_u:          %d", c.rf.mem[9]);
+        $display("x10_u:         %d", c.rf.mem[10]);
+
+        $display("x1_h:          %h", c.rf.mem[1]);
+        $display("x2_h:          %h", c.rf.mem[2]);
+        $display("x3_h:          %h", c.rf.mem[3]);
+        $display("x4_h:          %h", c.rf.mem[4]);
+        $display("x5_h:          %h", c.rf.mem[5]);
+        $display("x6_h:          %h", c.rf.mem[6]);
+        $display("x7_h:          %h", c.rf.mem[7]);
+        $display("x8_h:          %h", c.rf.mem[8]);
+        $display("x9_h:          %h", c.rf.mem[9]);
+        $display("x10_h:         %h", c.rf.mem[10]);
+
+        $display("is_mem_write:          %h", c.mem.is_write_enabled);
+        $display("m[1016]:          %h", c.mem.mem[1016]);
+        $display("m[1020]:          %h", c.mem.mem[1020]);
+        $display("m[1024]:          %h", c.mem.mem[1024]);
+
         $display("===================");
+
     end
     // initial #1900 $finish;
     initial begin
