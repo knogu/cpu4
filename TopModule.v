@@ -22,7 +22,8 @@ wire c1,c2;
 m_prescale50000 u0(CLK1, c1);
 m_prescale1000 u1(CLK1, c1, c2);
 
-cpu cpu(c2);
+wire [31:0] result;
+cpu cpu(c2, result);
 
 wire [7:0] result_dec;
 m_seven_segment seg1(result[3:0], result_dec);
