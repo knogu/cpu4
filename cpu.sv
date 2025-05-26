@@ -170,7 +170,12 @@ module cpu(input wire clk, output wire [31:0] result); // result: for displaying
     wire [31:0] mem_addr;
     wire is_read_from_result;
     m_mux m(r_pc[31:2], result, is_read_from_result, mem_addr);
-    mem mem(mem_addr, clk, is_mem_write, rs2_val, read_data); // pipeline regs in fetch stage
+    mem mem(.address(mem_addr),
+        .clock(clk),
+        .data(rs2_val),
+        .wren(is_mem_write),
+        .q(read_data)
+    );
 
     // decode
     wire[31:0] rs1_val, rs2_val;
@@ -305,7 +310,7 @@ module m_top();
         $display("x9_h:          %h", c.rf.mem[9]);
         $display("x10_h:         %h", c.rf.mem[10]);
 
-        $display("is_mem_write:          %h", c.mem.is_write_enabled);
+        $display("is_mem_write:          %h", c.mem.wren);
 
         $display("sp:          %d", $signed(c.rf.mem[2]));
         $display("fp:          %d", $signed(c.rf.mem[8]));
