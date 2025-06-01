@@ -157,13 +157,16 @@ insts6 = [
 assertions6 = [
     {"stage": "FETCH"},
         {"stage": "DECODE"},
-        {"stage": "EX_I"},
+        {"stage": "EX_I", "result": 8},
         {"stage": "ALU_WB"},
     {"stage": "FETCH", "x1": 8},
         {"stage": "DECODE", "rs1_val": 8, "1st_op": 8, "2nd_op": 4, "alu_out": 12},
         {"stage": "JALR", "1st_op": 4, "2nd_op": 4, "alu_out": 8, "result": 12},
         {"stage": "ALU_WB", "rd": 2, "result": 8},
-    {"stage": "FETCH", "x2": 8}
+    {"stage": "FETCH", "x2": 8},
+        {"stage": "DECODE"},
+        {"stage": "EX_I", "result": 5},
+        {"stage": "ALU_WB"},
 ]
 
 insts7 = [
